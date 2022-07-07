@@ -1,33 +1,39 @@
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
+from .models import Movie
 
-data = {
-    'movie_list' : [
-        {
-            'id' : 5,
-            'title' : 'Jaws',
-            'year' : 1969,
-        },
-        
-        {
-            'id' : 6,
-            'title' : 'Sharknado',
-            'year' : 1980,
-        },
-        
-        {
-            'id' : 7,
-            'title' : 'The meg',
-            'year' : 1940,
-        
-        },
-        
-    ]
-}
 
 def movies(request):
-    return render(request, 'movies/movie_list.html', data)
-
+    data = Movie.objects.all()
+    return render(request, 'movies/movie_list.html', {'movie_list' : data})
+    
 
 def home(request):
     return HttpResponse("homepage")
+
+
+def detail(request, id):
+    data = Movie.objects.get(pk=id)
+    return render(request, 'movies/detail.html', {'movie' : data})
+
+
+def add(request):
+    title = request.POST.get('title')
+    year = request.POST.get('year')
+    
+    if title and year:
+        new_movie = Movie(title=title, year=year)
+        new_movie.save()
+        return HttpResponseRedirect('/movies/')
+
+    return render(request, 'movies/add.html')
+
+def delete(request, id):
+    try:
+        movie = Movie.objects.get(pk=id)
+    except:
+        raise Http404('Movie doesnt exist')
+    
+    movie.delete()
+    
+    return HttpResponseRedirect('/movies')
